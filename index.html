@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cal Track — Daily Calorie Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #FFF8F2; color: #1a1a1a; min-height: 100vh; padding: 32px 16px 64px; }
+    .wrap { max-width: 500px; margin: 0 auto; }
+
+    h1 { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: #1a1a1a; }
+    .subtitle { font-size: 13px; color: #999; margin-top: 3px; }
+
+    .goal-bar-wrap { background: #f0ebe4; border-radius: 999px; height: 9px; margin: 14px 0 5px; }
+    .goal-bar { height: 9px; border-radius: 999px; background: #E85D2F; transition: width 0.4s ease; max-width: 100%; }
+    .goal-row { display: flex; justify-content: space-between; font-size: 12px; color: #bbb; }
+    .over { color: #E85D2F; font-weight: 600; }
+
+    .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+    .stat { background: #fff; border-radius: 12px; padding: 14px 10px; border: 0.5px solid #e8e0d8; text-align: center; }
+    .stat-val { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+    .stat-lbl { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+
+    .card { background: #fff; border-radius: 16px; border: 0.5px solid #e8e0d8; padding: 20px; margin-bottom: 16px; }
+    .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+
+    .field { margin-bottom: 12px; }
+    .field label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 5px; }
+    .field input, .field select { width: 100%; border: 0.5px solid #ddd; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; background: #fafafa; outline: none; transition: border-color 0.2s; color: #1a1a1a; }
+    .field input:focus, .field select:focus { border-color: #E85D2F; background: #fff; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Search */
+    .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .search-row input { flex: 1; border: 0.5px solid #ddd; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; background: #fafafa; outline: none; color: #1a1a1a; }
+    .search-row input:focus { border-color: #E85D2F; background: #fff; }
+    .search-btn { padding: 10px 16px; background: #E85D2F; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap; }
+    .search-btn:hover { opacity: 0.88; }
+    .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .results-list { max-height: 260px; overflow-y: auto; border: 0.5px solid #e8e0d8; border-radius: 10px; background: #fafafa; }
+    .result-item { padding: 10px 13px; cursor: pointer; border-bottom: 0.5px solid #f0ebe4; transition: background 0.1s; }
+    .result-item:last-child { border-bottom: none; }
+    .result-item:hover { background: #fff3ec; }
+    .result-item.active { background: #fff3ec; border-left: 3px solid #E85D2F; }
+    .result-name { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+    .result-cal { font-size: 12px; color: #E85D2F; font-weight: 600; }
+    .result-meta { font-size: 11px; color: #bbb; margin-top: 1px; }
+
+    .selected-food { background: #fff3ec; border: 0.5px solid #f5c4a0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+    .selected-food .name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .selected-food .macros { display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap; }
+    .macro-chip { font-size: 12px; color: #666; background: #fff; border: 0.5px solid #e8e0d8; border-radius: 6px; padding: 3px 8px; }
+    .macro-chip span { font-weight: 600; color: #1a1a1a; }
+
+    .search-status { font-size: 12px; color: #aaa; margin-bottom: 8px; min-height: 18px; }
+
+    .btn { width: 100%; padding: 13px; background: #E85D2F; color: #fff; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; border: none; border-radius: 10px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; margin-top: 4px; }
+    .btn:hover { opacity: 0.88; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Log */
+    .clear-btn { font-size: 12px; color: #E85D2F; background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+    .entry { display: flex; align-items: flex-start; justify-content: space-between; padding: 11px 0; border-bottom: 0.5px solid #f0ebe4; gap: 8px; }
+    .entry:last-child { border-bottom: none; }
+    .entry-name { font-size: 13px; font-weight: 500; }
+    .entry-sub { font-size: 11px; color: #bbb; margin-top: 2px; }
+    .entry-cal { font-size: 14px; font-weight: 700; color: #E85D2F; white-space: nowrap; }
+    .del-btn { background: none; border: none; cursor: pointer; color: #ccc; font-size: 18px; line-height: 1; padding: 0 2px; transition: color 0.15s; }
+    .del-btn:hover { color: #E85D2F; }
+    .empty { text-align: center; color: #ccc; font-size: 13px; padding: 28px 0; }
+
+    .badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+    .badge-b { background: #e8f5e9; color: #2e7d32; }
+    .badge-l { background: #fff3e0; color: #e65100; }
+    .badge-s { background: #fce4ec; color: #c2185b; }
+    .badge-d { background: #e3f2fd; color: #1565c0; }
+
+    .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .goal-edit { text-align: right; }
+    .goal-edit small { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 4px; }
+    .goal-edit-row { display: flex; align-items: center; gap: 6px; }
+    .goal-edit-row input { width: 76px; border: 0.5px solid #ddd; border-radius: 7px; padding: 5px 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; text-align: center; background: #fafafa; outline: none; color: #1a1a1a; }
+    .goal-edit-row input:focus { border-color: #E85D2F; }
+    .goal-edit-row span { font-size: 12px; color: #999; }
+
+    .tabs { display: flex; gap: 4px; margin-bottom: 14px; }
+    .tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; border: 0.5px solid #e8e0d8; background: #fafafa; color: #999; transition: all 0.15s; }
+    .tab.active { background: #E85D2F; color: #fff; border-color: #E85D2F; }
+
+    .manual-form { display: none; }
+    .manual-form.show { display: block; }
+    .api-form { display: none; }
+    .api-form.show { display: block; }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1512; color: #f0ece6; }
+      .card, .stat { background: #251f18; border-color: #3a3028; }
+      .stat-val, h1, .entry-name, .result-name, .selected-food .name { color: #f0ece6; }
+      .field input, .field select, .search-row input, .goal-edit-row input { background: #1e1812; border-color: #3a3028; color: #f0ece6; }
+      .field input:focus, .field select:focus, .search-row input:focus { background: #251f18; }
+      .results-list { background: #1e1812; border-color: #3a3028; }
+      .result-item { border-color: #2e2820; }
+      .result-item:hover, .result-item.active { background: #2e2015; }
+      .selected-food { background: #2e2015; border-color: #5a3020; }
+      .macro-chip { background: #251f18; border-color: #3a3028; color: #aaa; }
+      .macro-chip span { color: #f0ece6; }
+      .entry { border-color: #2e2820; }
+      .goal-bar-wrap { background: #2e2820; }
+      .tab { background: #1e1812; border-color: #3a3028; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header-row">
+    <div>
+      <h1>Cal Track</h1>
+      <p class="subtitle" id="date-lbl"></p>
+    </div>
+    <div class="goal-edit">
+      <small>Daily goal</small>
+      <div class="goal-edit-row">
+        <input type="number" id="goal-input" min="500" max="6000" />
+        <span>kcal</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="goal-bar-wrap"><div class="goal-bar" id="goal-bar" style="width:0%"></div></div>
+  <div class="goal-row">
+    <span id="consumed-lbl">0 kcal consumed</span>
+    <span id="remaining-lbl"></span>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Total kcal</div></div>
+    <div class="stat"><div class="stat-val" id="s-meals">0</div><div class="stat-lbl">Meals</div></div>
+    <div class="stat"><div class="stat-val" id="s-avg">—</div><div class="stat-lbl">Avg / meal</div></div>
+  </div>
+
+  <!-- LOG MEAL CARD -->
+  <div class="card">
+    <h2>Log a meal</h2>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-search" onclick="switchTab('search')">&#x1F50D; Search USDA</div>
+      <div class="tab" id="tab-manual" onclick="switchTab('manual')">&#x270F; Manual entry</div>
+    </div>
+
+    <!-- API SEARCH TAB -->
+    <div class="api-form show" id="api-form">
+      <div class="search-row">
+        <input type="text" id="search-q" placeholder="Type a food — e.g. banana, dal, chicken breast…" />
+        <button class="search-btn" id="search-btn" onclick="doSearch()">Search</button>
+      </div>
+      <div class="search-status" id="search-status"></div>
+
+      <div id="results-wrap" style="display:none; margin-bottom:12px;">
+        <div class="results-list" id="results-list"></div>
+      </div>
+
+      <div id="selected-wrap" style="display:none;">
+        <div class="selected-food" id="selected-food"></div>
+        <div class="row2">
+          <div class="field">
+            <label>Portion (g)</label>
+            <input type="number" id="portion-g" value="100" min="1" oninput="updatePortionCal()" />
+          </div>
+          <div class="field">
+            <label>Meal type</label>
+            <select id="api-meal-type">
+              <option value="Breakfast">Breakfast</option>
+              <option value="Lunch" selected>Lunch</option>
+              <option value="Snack">Snack</option>
+              <option value="Dinner">Dinner</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Notes (optional)</label>
+          <input type="text" id="api-notes" placeholder="e.g. home cooked, approx." />
+        </div>
+        <div style="font-size:13px; color:#E85D2F; font-weight:600; margin-bottom:10px;" id="portion-cal-preview"></div>
+        <button class="btn" onclick="addFromApi()">+ Add to log</button>
+      </div>
+
+      <div id="no-selection-hint" style="font-size:13px; color:#ccc; text-align:center; padding:16px 0;">
+        Search for a food above, then tap a result to select it
+      </div>
+    </div>
+
+    <!-- MANUAL TAB -->
+    <div class="manual-form" id="manual-form">
+      <div class="field">
+        <label>Food / Meal name</label>
+        <input type="text" id="m-name" placeholder="e.g. Chicken biryani" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Calories (kcal)</label>
+          <input type="number" id="m-cal" placeholder="350" min="0" />
+        </div>
+        <div class="field">
+          <label>Meal type</label>
+          <select id="m-type">
+            <option value="Breakfast">Breakfast</option>
+            <option value="Lunch" selected>Lunch</option>
+            <option value="Snack">Snack</option>
+            <option value="Dinner">Dinner</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes (optional)</label>
+        <input type="text" id="m-notes" placeholder="e.g. home cooked, approx." />
+      </div>
+      <button class="btn" onclick="addManual()">+ Add to log</button>
+    </div>
+  </div>
+
+  <!-- TODAY'S LOG -->
+  <div class="card">
+    <h2>Today's log <button class="clear-btn" onclick="clearAll()">Clear all</button></h2>
+    <div id="log-list"><div class="empty">No meals logged yet.</div></div>
+  </div>
+
+</div>
+
+<script>
+  const API_KEY  = 'zGR7WlGRXpjyGFBTddz9gfmVXDbiNBre1l4HUOyh';
+  const FDC_BASE = 'https://api.nal.usda.gov/fdc/v1';
+  const STORE_KEY = 'caltrack_v3';
+  const GOAL_KEY  = 'caltrack_goal';
+  const TODAY     = new Date().toISOString().slice(0, 10);
+
+  let entries = [], goal = 2000;
+  let selectedFood = null;   // { name, calPer100g, protein, carbs, fat }
+  let searchResults = [];
+
+  // ── PERSISTENCE ────────────────────────────────────────────────────────────
+  function save() {
+    const all = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+    all[TODAY] = entries;
+    localStorage.setItem(STORE_KEY, JSON.stringify(all));
+  }
+  function load() {
+    const all = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+    entries = all[TODAY] || [];
+    goal = parseInt(localStorage.getItem(GOAL_KEY) || '2000');
+  }
+
+  // ── TABS ───────────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.getElementById('tab-search').classList.toggle('active', tab === 'search');
+    document.getElementById('tab-manual').classList.toggle('active', tab === 'manual');
+    document.getElementById('api-form').classList.toggle('show', tab === 'search');
+    document.getElementById('manual-form').classList.toggle('show', tab === 'manual');
+  }
+
+  // ── USDA SEARCH ────────────────────────────────────────────────────────────
+  document.getElementById('search-q').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+
+  async function doSearch() {
+    const q = document.getElementById('search-q').value.trim();
+    if (!q) return;
+    const btn = document.getElementById('search-btn');
+    btn.disabled = true; btn.textContent = '…';
+    document.getElementById('search-status').textContent = 'Searching USDA database…';
+    document.getElementById('results-wrap').style.display = 'none';
+    document.getElementById('selected-wrap').style.display = 'none';
+    document.getElementById('no-selection-hint').style.display = 'none';
+    selectedFood = null;
+
+    try {
+      const url = `${FDC_BASE}/foods/search?api_key=${API_KEY}&query=${encodeURIComponent(q)}&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)&pageSize=10`;
+      const res  = await fetch(url);
+      const data = await res.json();
+
+      if (!data.foods || data.foods.length === 0) {
+        document.getElementById('search-status').textContent = 'No results found. Try different keywords.';
+        document.getElementById('no-selection-hint').style.display = 'block';
+        return;
+      }
+      searchResults = data.foods;
+      document.getElementById('search-status').textContent =
+        `${data.totalHits.toLocaleString()} matches in USDA — showing top ${data.foods.length}`;
+      renderResults(data.foods);
+      document.getElementById('results-wrap').style.display = 'block';
+    } catch(e) {
+      document.getElementById('search-status').textContent = 'Request failed. Check your connection or API key.';
+      document.getElementById('no-selection-hint').style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Search';
+    }
+  }
+
+  function getNut(nutrients, ids) {
+    for (const id of ids) {
+      const n = nutrients.find(n => n.nutrientId === id || (n.nutrient && n.nutrient.id === id));
+      if (n) { const v = n.value ?? n.amount; if (v !== undefined && v !== null) return v; }
+    }
+    return null;
+  }
+
+  function renderResults(foods) {
+    const list = document.getElementById('results-list');
+    list.innerHTML = foods.map((f, i) => {
+      const cal = getNut(f.foodNutrients || [], [1008, 2047]);
+      return `<div class="result-item" id="ri-${i}" onclick="selectResult(${i})">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div class="result-name">${esc(f.description)}</div>
+          <div class="result-cal">${cal !== null ? Math.round(cal) + ' kcal' : '—'}<span style="font-size:10px;color:#bbb;font-weight:400">/100g</span></div>
+        </div>
+        <div class="result-meta">${f.dataType || ''} ${f.foodCategory ? '· ' + f.foodCategory : ''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function selectResult(i) {
+    document.querySelectorAll('.result-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('ri-' + i).classList.add('active');
+    document.getElementById('search-status').textContent = 'Loading full nutrition data…';
+
+    try {
+      const food = searchResults[i];
+      const res  = await fetch(`${FDC_BASE}/food/${food.fdcId}?api_key=${API_KEY}`);
+      const data = await res.json();
+      const nuts = data.foodNutrients || [];
+
+      function fnd(ids) {
+        for (const id of ids) {
+          const n = nuts.find(n => n.nutrient && (n.nutrient.id === id || n.nutrient.number === String(id)));
+          if (n && n.amount !== null && n.amount !== undefined) return n.amount;
+        }
+        return 0;
+      }
+
+      selectedFood = {
+        name:       data.description,
+        fdcId:      data.fdcId,
+        calPer100g: fnd([1008, 2047]),
+        protein:    fnd([1003]),
+        carbs:      fnd([1005]),
+        fat:        fnd([1004]),
+        fiber:      fnd([1079]),
+      };
+
+      document.getElementById('search-status').textContent =
+        `${data.totalHits !== undefined ? data.totalHits.toLocaleString() + ' matches · ' : ''}Selected: ${data.description}`;
+
+      renderSelectedFood();
+      document.getElementById('results-wrap').style.display = 'block';
+      document.getElementById('selected-wrap').style.display = 'block';
+      document.getElementById('no-selection-hint').style.display = 'none';
+      updatePortionCal();
+    } catch(e) {
+      document.getElementById('search-status').textContent = 'Failed to load details. Try again.';
+    }
+  }
+
+  function renderSelectedFood() {
+    const f = selectedFood;
+    document.getElementById('selected-food').innerHTML = `
+      <div class="name">${esc(f.name)}</div>
+      <div class="macros">
+        <div class="macro-chip">Cal <span>${Math.round(f.calPer100g)}</span> kcal</div>
+        <div class="macro-chip">Protein <span>${f.protein.toFixed(1)}g</span></div>
+        <div class="macro-chip">Carbs <span>${f.carbs.toFixed(1)}g</span></div>
+        <div class="macro-chip">Fat <span>${f.fat.toFixed(1)}g</span></div>
+        ${f.fiber ? `<div class="macro-chip">Fiber <span>${f.fiber.toFixed(1)}g</span></div>` : ''}
+        <div class="macro-chip" style="font-size:10px;color:#bbb;">per 100g</div>
+      </div>`;
+  }
+
+  function updatePortionCal() {
+    if (!selectedFood) return;
+    const g   = parseFloat(document.getElementById('portion-g').value) || 0;
+    const cal = Math.round(selectedFood.calPer100g * g / 100);
+    document.getElementById('portion-cal-preview').textContent = `= ${cal} kcal for ${g}g`;
+  }
+
+  function addFromApi() {
+    if (!selectedFood) return;
+    const g    = parseFloat(document.getElementById('portion-g').value) || 100;
+    const cal  = Math.round(selectedFood.calPer100g * g / 100);
+    const type = document.getElementById('api-meal-type').value;
+    const notes = document.getElementById('api-notes').value.trim();
+    entries.push({
+      name:  selectedFood.name,
+      cal,
+      type,
+      notes: notes || `${g}g · USDA #${selectedFood.fdcId}`,
+      time:  new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    save(); render();
+    // reset
+    selectedFood = null;
+    document.getElementById('search-q').value = '';
+    document.getElementById('results-wrap').style.display = 'none';
+    document.getElementById('selected-wrap').style.display = 'none';
+    document.getElementById('no-selection-hint').style.display = 'block';
+    document.getElementById('search-status').textContent = '';
+    document.getElementById('portion-g').value = '100';
+    document.getElementById('api-notes').value = '';
+    document.getElementById('portion-cal-preview').textContent = '';
+  }
+
+  // ── MANUAL ADD ─────────────────────────────────────────────────────────────
+  function addManual() {
+    const name = document.getElementById('m-name').value.trim();
+    const cal  = parseInt(document.getElementById('m-cal').value);
+    const type = document.getElementById('m-type').value;
+    const notes = document.getElementById('m-notes').value.trim();
+    if (!name || isNaN(cal) || cal < 0) { document.getElementById('m-name').focus(); return; }
+    entries.push({ name, cal, type, notes, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+    save(); render();
+    document.getElementById('m-name').value = '';
+    document.getElementById('m-cal').value  = '';
+    document.getElementById('m-notes').value = '';
+    document.getElementById('m-name').focus();
+  }
+  document.getElementById('m-cal').addEventListener('keydown', e => { if (e.key === 'Enter') addManual(); });
+
+  // ── RENDER ─────────────────────────────────────────────────────────────────
+  function badgeClass(t) {
+    return { Breakfast:'badge-b', Lunch:'badge-l', Snack:'badge-s', Dinner:'badge-d' }[t] || 'badge-b';
+  }
+
+  function render() {
+    const total = entries.reduce((s, e) => s + e.cal, 0);
+    const pct   = Math.min(100, Math.round((total / goal) * 100));
+    const bar   = document.getElementById('goal-bar');
+    bar.style.width      = pct + '%';
+    bar.style.background = total > goal ? '#c0392b' : '#E85D2F';
+
+    document.getElementById('consumed-lbl').textContent = total.toLocaleString() + ' kcal consumed';
+    const remEl = document.getElementById('remaining-lbl');
+    if (total > goal) {
+      remEl.textContent = (total - goal).toLocaleString() + ' kcal over goal';
+      remEl.className = 'over';
+    } else {
+      remEl.textContent = (goal - total).toLocaleString() + ' kcal remaining';
+      remEl.className = '';
+    }
+
+    document.getElementById('s-total').textContent = total.toLocaleString();
+    document.getElementById('s-meals').textContent = entries.length;
+    document.getElementById('s-avg').textContent   = entries.length ? Math.round(total / entries.length) : '—';
+
+    const logEl = document.getElementById('log-list');
+    if (!entries.length) { logEl.innerHTML = '<div class="empty">No meals logged yet.</div>'; return; }
+    logEl.innerHTML = [...entries].reverse().map((e, ri) => {
+      const i = entries.length - 1 - ri;
+      return `<div class="entry">
+        <div style="flex:1;min-width:0;">
+          <div class="entry-name">${esc(e.name)}<span class="badge ${badgeClass(e.type)}">${e.type}</span></div>
+          <div class="entry-sub">${e.time}${e.notes ? ' · ' + esc(e.notes) : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span class="entry-cal">${e.cal.toLocaleString()} kcal</span>
+          <button class="del-btn" onclick="del(${i})" aria-label="Remove">×</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function del(i) { entries.splice(i, 1); save(); render(); }
+  function clearAll() { if (entries.length && confirm('Clear all meals for today?')) { entries = []; save(); render(); } }
+
+  // ── GOAL INPUT ─────────────────────────────────────────────────────────────
+  const goalInput = document.getElementById('goal-input');
+  goalInput.oninput = () => {
+    const v = parseInt(goalInput.value);
+    if (v >= 500 && v <= 6000) { goal = v; localStorage.setItem(GOAL_KEY, goal); render(); }
+  };
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── INIT ───────────────────────────────────────────────────────────────────
+  load();
+  goalInput.value = goal;
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d = new Date();
+  document.getElementById('date-lbl').textContent =
+    `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  render();
+</script>
+</body>
+</html>
